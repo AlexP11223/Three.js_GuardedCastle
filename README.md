@@ -42,6 +42,8 @@ Fog is added at its borders:
 scene.fog = new THREE.Fog(0xcccccc, 400, 900);
  ```
  
+ ![](https://i.imgur.com/4HwQgy5.png)
+ 
 3 cameras are available to look at the scene from different positions (as well as change it using `TrackballControls`). At first I was thinking about creating 3 camera objects and `activeCamera` variable that will be passed to the render method, but it did not work well with `TrackballControls`, so I ended up simply changing the position on buttons click like this:
 
 ```javascript
@@ -199,3 +201,144 @@ castle.add(outerRoad2);
 ## Guards
 
 In order to be able to export Blender model to JSON I updated `Three.js` to the latest version at that time (r71) because the old exporter (`io_three_mesh`) was replaced with new `io_three` and the old one was not included in the Three.js distribution provided with the book examples (and it was hard to find where it can be downloaded, besides I was not sure if it works with the current Blender version).
+
+The archer model is loaded via `JSONLoader` and cloned 6 times to be placed on the wall.
+
+```javascript
+var loader = new THREE.JSONLoader();
+loader.load("assets/archer_version_3.json",
+        function (geom, mat) {
+            var archer = new THREE.Mesh(geom, mat[0]);
+
+            archer.castShadow = true;
+
+            // add archer to the wall
+            var walls = [castle.getObjectByName("frontWallLeft"), castle.getObjectByName("frontWallRight")];
+            walls.forEach(function(wall) {
+                var i;
+                for (i = 0; i < 3; i++) {
+                    var wallArcher = archer.clone();
+
+                    wallArcher.position.y = wall.height / 2 + 10;
+                    wallArcher.position.x = -23 + i * 18;
+
+                    wall.add(wallArcher);
+                }
+            });
+        });
+```
+
+![](https://i.imgur.com/ylQTGNA.png)
+
+Also there are knights patrolling around the castle. New knight can be created by button click and after leaving through gates (which will be hidden at that moment) he will start patrolling that radius too.
+
+```javascript
+function moveKnight(knight, stepIncr) {
+    if (knight.patrolStatus == "starting") {
+        knight.position.y -= stepIncr * 100;
+
+    }
+    else {
+        knight.step += stepIncr;
+
+        knight.position.x = Math.sin(knight.step) * knight.patrolRadius;
+        knight.position.y = Math.cos(knight.step) * knight.patrolRadius;
+
+        if (knight.rowPos !== undefined) {
+            knight.position.x += knight.rowPos * 20;
+            knight.position.y -= knight.colPos * 20;
+        }
+
+        knight.rotateY(-stepIncr);
+    }
+}
+
+var knights = [];
+var knight;
+loader.load("assets/knight.json",
+        function (geom, mat) {
+            var scale = 1.2;
+
+            knight = new THREE.Mesh(geom, mat[0]);
+
+            knight.castShadow = true;
+
+            knight.rotation.x = 0.5 * Math.PI;
+            knight.position.z = 12;
+
+            knight.scale.set(scale, scale, scale);
+
+            var i;
+            for (i = 0; i < 3; i++) {
+                var j;
+                for (j = 0; j < 3; j++) {
+                    var patrolKnight = knight.clone();
+
+                    patrolKnight.rowPos = j;
+                    patrolKnight.colPos = i;
+                    patrolKnight.step = 0;
+                    patrolKnight.patrolRadius = castle.castleSize / 2 + 110;
+
+                    patrolKnight.rotateY(0.5 * Math.PI);
+
+                    knights.push(patrolKnight);
+
+                    ground.add(patrolKnight);
+                }
+            }
+        });
+
+gui.add(new function() {
+    this.addKnight = function() {
+        var patrolKnight = knight.clone();
+
+        patrolKnight.patrolStatus = "starting";
+        patrolKnight.step = Math.PI;
+        patrolKnight.patrolRadius = castle.castleSize / 2 + 60;
+
+        patrolKnight.position.y = -30;
+
+        knights.push(patrolKnight);
+
+        ground.add(patrolKnight);
+
+    }
+},'addKnight');
+
+function render() {
+    ...
+    var goingThroughGates = false;
+
+    knights.forEach(function(knight) {
+        moveKnight(knight, 0.002);
+
+        if (knight.patrolStatus == "starting") {
+            if (castle.castleSize / 2 - 5 < Math.abs(knight.position.y)) {
+                goingThroughGates = true;
+            }
+            if (castle.castleSize / 2 + 50 < Math.abs(knight.position.y)) {
+                knight.patrolStatus = "patrol";
+
+                knight.rotateY(-0.5 * Math.PI);
+            }
+        }
+    });
+
+    var gate = castle.getObjectByName("gate", true);
+    gate.visible = !goingThroughGates; 
+}
+```
+
+![](https://i.imgur.com/xgqI95b.png)
+
+![](https://i.imgur.com/ZLCJ63T.png)
+
+Unfortunately, they are just “floating” without walk animation, because I failed to make it work.
+
+I wanted to use the animation that was included in these models, as well as implement more activities in the scene (such as shooting arrows) but when I exported it with animations and set material `skinning` property to `true` it became very distorted.
+
+![](https://i.imgur.com/A9itbse.png)
+
+I have not figured out whether it was something wrong with the models or if it was a bug in the exporter (Three.js had a lot of issue reports about the exporter in their reporter).
+
+I also tried to export as Collada (.dae) but it was not successful either: one model did not even load, throwing errors somewhere deep inside the `ColladaLoader.js` (there were loops from 0 to `bones.length` and I noticed that the lowest index in the `bones` array was 6, I tried to fix that but it did not help much), the other one loaded and displayed fine but I did not manage to make the animation work. 
