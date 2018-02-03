@@ -150,7 +150,7 @@ gateBuilding.add(gate);
 gateBuilding.add(roof);
 ```
 
-![](https://i.imgur.com/kmDpxCB.png)
+![](https://i.imgur.com/iKAGEhc.png)
 
 Because of that the front wall is split into two parts.
 
