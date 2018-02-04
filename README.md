@@ -44,6 +44,36 @@ scene.fog = new THREE.Fog(0xcccccc, 400, 900);
  
  ![](https://i.imgur.com/4HwQgy5.png)
  
+ 
+There is also a road with intersection and a path from the castle building to the gate:
+
+```javascript
+function createRoad(length, width, material) {
+    var road = new THREE.Mesh(new THREE.PlaneGeometry(length, width), material);
+    road.receiveShadow = true;
+    road.rotation.x = -0.5 * Math.PI;
+    road.position.y = 0.2;
+    return road;
+}
+// add road inside the castle
+
+var innerRoad = createRoad(wallWidth / 2, 25, innerRoadMaterial);
+innerRoad.rotateZ(0.5 * Math.PI);
+innerRoad.position.z = wallWidth / 2 / 2 + gateSize / 2;
+castle.add(innerRoad);
+
+// add roads with intersection outside
+
+var outerRoad = createRoad(850, 35, roadMaterial);
+outerRoad.rotateZ(0.5 * Math.PI);
+outerRoad.position.z = wallWidth / 2 + gateSize / 2 + 425;
+castle.add(outerRoad);
+
+var outerRoad2 = createRoad(1900, 55, roadMaterial);
+outerRoad2.position.z = 600;
+castle.add(outerRoad2);
+```
+ 
 3 cameras are available to look at the scene from different positions (as well as change it using `TrackballControls`). At first I was thinking about creating 3 camera objects and `activeCamera` variable that will be passed to the render method, but it did not work well with `TrackballControls`, so I ended up simply changing the position on buttons click like this:
 
 ```javascript
