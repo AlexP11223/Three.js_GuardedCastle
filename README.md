@@ -365,10 +365,10 @@ function render() {
 
 Unfortunately, they are just “floating” without walk animation, because I failed to make it work.
 
-I wanted to use the animation that was included in these models, as well as implement more activities in the scene (such as shooting arrows) but when I exported it with animations and set material `skinning` property to `true` it became very distorted.
+I wanted to use the animation that was included in these models, as well as implement more activities in the scene (such as shooting arrows, attacking) but when I exported them with animations and set material `skinning` property to `true` it became very distorted:
 
 ![](https://i.imgur.com/A9itbse.png)
 
-I have not figured out whether it was something wrong with the models or if it was a bug in the exporter (Three.js had a lot of issue reports about the exporter in their reporter).
+I have not figured out whether it was something wrong with the models or it was a bug in the exporter (Three.js had a lot of issue reports about the exporter in their repository).
 
 I also tried to export as Collada (.dae) but it was not successful either: one model did not even load, throwing errors somewhere deep inside the `ColladaLoader.js` (there were loops from 0 to `bones.length` and I noticed that the lowest index in the `bones` array was 6, I tried to fix that but it did not help much), the other one loaded and displayed fine but I did not manage to make the animation work. 
